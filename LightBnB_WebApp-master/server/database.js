@@ -106,14 +106,60 @@ exports.getAllReservations = getAllReservations;
 // }
 
 const getAllProperties = function(options, limit = 10) {
-  return pool.query(
-    `SELECT * 
-    FROM properties 
-    LIMIT $1
-    `, [limit])
-    .then(res => res.rows);
-}
+  
+  // 1
+  const queryParams = [];
+  // Start of query
+  let queryString = `
+  SELECT properties.*, avg(property_reviews.rating) as average_rating
+  FROM properties
+  JOIN property_reviews ON properties.id = property_id
+  `;
+  
+  //Function to see if it needs and or where injected
+  const keyword = (n) => {
+    const output = queryParams.length > n ? ' AND' : 'WHERE'; 
+    return output;
+  } 
 
+  // Check if feilds are filled and add to query------
+  if (options.city) {
+    queryParams.push(`%${options.city}%`); 
+    queryString += `WHERE city LIKE $${queryParams.length}`;
+  } 
+  
+  if (options.owner_id) {
+    queryParams.push(Number(options.owner_id)); 
+    queryString += `${keyword(1)} users.id = $${queryParams.length}`;
+  } 
+
+  if (options.minimum_price_per_night && options.maximum_price_per_night) {
+    queryParams.push(options.minimum_price_per_night, options.maximum_price_per_night); 
+    queryString += `${keyword(2)} cost_per_night >= $${queryParams.length - 1} AND 
+    cost_per_night <= $${queryParams.length}`;
+  } 
+
+  if (options.minimum_rating) {
+    queryParams.push(Number(options.minimum_rating)) 
+    queryString += `${keyword(1)} rating >= $${queryParams.length}`;
+  }
+ //---------------------------------------------------------
+
+  // Add end of query
+  queryParams.push(limit);
+  queryString += `
+  GROUP BY properties.id
+  ORDER BY cost_per_night
+  LIMIT $${queryParams.length};
+  `;
+
+  // 5
+  console.log('qString', queryString, 'qParm', queryParams);
+  //console.log('Im here')
+  // 6
+  return pool.query(queryString, queryParams)
+  .then(res => res.rows); 
+}
 
 exports.getAllProperties = getAllProperties;
 
@@ -129,4 +175,6 @@ const addProperty = function(property) {
   properties[propertyId] = property;
   return Promise.resolve(property);
 }
+
+
 exports.addProperty = addProperty;
