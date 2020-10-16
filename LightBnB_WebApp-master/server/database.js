@@ -153,17 +153,8 @@ const getAllProperties = function(options, limit = 10) {
   LIMIT $${queryParams.length};
   `;
 
-  console.log(queryString) 
-  let testQuery = `
-  SELECT properties.*, avg(property_reviews.rating) as average_rating
-  FROM properties
-  JOIN property_reviews ON properties.id = property_id
-  WHERE city LIKE '%Oakville%'
-  GROUP BY properties.id;`
   return pool.query(queryString, queryParams)
-  .then(res => {
-    console.log(res.rows)
-    return res.rows}); 
+  .then(res => res.rows); 
 }
 
 exports.getAllProperties = getAllProperties;
@@ -188,7 +179,6 @@ const addProperty = function (property) {
 
   return pool.query(queryString, queryParams)
   .then(res => rows[0])
-  .catch(err => null);
 };
 
 
