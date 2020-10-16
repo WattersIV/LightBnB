@@ -113,7 +113,7 @@ const getAllProperties = function(options, limit = 10) {
   let queryString = `
   SELECT properties.*, avg(property_reviews.rating) as average_rating
   FROM properties
-  JOIN property_reviews ON properties.id = property_id
+  FULL OUTER JOIN property_reviews ON properties.id = property_id
   `;
   
   //Function to see if it needs and or where injected
@@ -153,9 +153,17 @@ const getAllProperties = function(options, limit = 10) {
   LIMIT $${queryParams.length};
   `;
 
-  console.log(queryString)
+  console.log(queryString) 
+  let testQuery = `
+  SELECT properties.*, avg(property_reviews.rating) as average_rating
+  FROM properties
+  JOIN property_reviews ON properties.id = property_id
+  WHERE city LIKE '%Oakville%'
+  GROUP BY properties.id;`
   return pool.query(queryString, queryParams)
-  .then(res => res.rows); 
+  .then(res => {
+    console.log(res.rows)
+    return res.rows}); 
 }
 
 exports.getAllProperties = getAllProperties;
